@@ -268,7 +268,9 @@ def main(num_epochs=NUM_EPOCHS):
 
 
             # adding in code to save params
-            save_params_slow("testing_file", epoch, output_layer, "csv", "NUMPY")
+            save_weight_bias_slow("testing_file", epoch, output_layer, "csv", "NUMPY")
+
+            save_params()
 
             # adding inc ode to save activations
 
@@ -278,6 +280,10 @@ def main(num_epochs=NUM_EPOCHS):
             save_activations_test("activations_test", epoch, dataset, output_layer, "csv", "NUMPY")
 
             if epoch['number'] >= num_epochs:
+                # save_params(output_layer, datafile, num_epochs, batch_size, num_hidden_units, learning_rate
+    # momentum, train_loss, valid_loss, valid_accuracy, output_dim, input_dim)
+                save_params(output_layer, datafile, num_epochs, batch_size, num_hidden_units, learning_rate, 
+                    momentum, train_loss, valid_loss, valid_accuracy, output_dim, input_dim)
                 break
 
     except KeyboardInterrupt:
@@ -289,3 +295,13 @@ def main(num_epochs=NUM_EPOCHS):
 
 if __name__ == '__main__':
     main()
+
+
+DATA_URL = 'http://deeplearning.net/data/mnist/mnist.pkl.gz'
+DATA_FILENAME = 'mnist.pkl.gz'
+
+NUM_EPOCHS = 500
+BATCH_SIZE = 600
+NUM_HIDDEN_UNITS = 512
+LEARNING_RATE = 0.01
+MOMENTUM = 0.9

@@ -14,10 +14,20 @@ import csv
 # Imports
 from IDAPICourseworkLibrary import *
 import h5py
+import json
 
-def save_params_slow(filename, epoch, output_layer, ending, out_type):
+def save_all():
+    new_experiment_folder("experiments")
+    save_weight_bias_slow()
+    save_activations_test()
+    save_params()
 
-    print("saving params...")
+def save_weight_bias_slow(filename, epoch, output_layer, ending, out_type):
+
+    print("saving weights/biases...")
+    
+    # check for directory, if not create it
+    data_directory = check_create_directory("data/weights-biases")
 
     # collecting all Tensor Shared Variables [W b W b W b] - weights and biases
     all_params = lasagne.layers.get_all_params(output_layer)
@@ -31,23 +41,27 @@ def save_params_slow(filename, epoch, output_layer, ending, out_type):
     print ("all params: ", all_params)
     print ("no arrays: ", no_arrays)
 
+    # initialise layer number
+    layer = 0
+
     # Going through, and saving each matrix to a separate file (not printing all, too slow??)
     for i, data in enumerate(param_values):
-        layer = 1
+        
         w_or_b = "na"
 
         # odd ones are weights, indexed from one?
         if (i % 2) != 0:
             w_or_b = "bias"
-            layer += 1
+            
         else:
             w_or_b = "weights"
+            layer += 1
 
         # saving the filename: epoch, layer, w/b
-        filename_unique = "{}-E{}-L{}-{}.{}".format(filename, epoch['number'], layer, w_or_b, ending)
+        filename_unique = "{}/{}-E{}-L{}-{}.{}".format(data_directory, filename, epoch['number'], layer, w_or_b, ending)
 
-        print filename_unique
-        # print data
+        # print filename_unique
+        print data.shape
 
         # different methods to output data - not all work :|
         if(out_type=="CSV"):
@@ -62,13 +76,17 @@ def save_params_slow(filename, epoch, output_layer, ending, out_type):
         elif(out_type=="JSON"):
             print "yet to be implemented"
 
-    print("params saved!") # hurray
+    print("weights/biases saved!") # hurray
 
 
 def save_activations_test(filename, epoch, dataset, output_layer, ending, out_type):
 
     print ("Saving Activations...")
+    
+    # check for directory, if not create it
+    data_directory = check_create_directory("data/activations")
 
+    # collects all lasagne layers as Theano Variables
     th_layers = lasagne.layers.get_all_layers(output_layer)
 
     X_val = dataset['X_valid']
@@ -81,9 +99,10 @@ def save_activations_test(filename, epoch, dataset, output_layer, ending, out_ty
 
         data = lasagne.layers.get_output(layer, X_val, deterministic=True).eval()
 
-        filename_unique = "{}-E{}-L{}.{}".format(filename, epoch['number'], i, ending)
+        filename_unique = "{}/{}-E{}-L{}.{}".format(data_directory, filename, epoch['number'], i, ending)
 
-        print filename_unique
+        # print filename_unique
+        print data.shape
 
         # different methods to output data - not all work :|
         if(out_type=="CSV"):
@@ -98,74 +117,103 @@ def save_activations_test(filename, epoch, dataset, output_layer, ending, out_ty
         elif(out_type=="JSON"):
             print "yet to be implemented"
         
-    print("activations saved!")
-
-        # n_features = output.shape[-1]
-        # seq_length = int(output.shape[0] / )
-
-        # if isinstance(layer, DenseLayer):
-        #     shape = 
-        #     output = output.reshape(shape)
-        # elif isinstance(layer, Conv1DLayer):
-        #     output = output.transpose(0,2,1)
-
-        # if epoch['number'] == 0:
-        #     f.create_dataset('validation_data', data=X_val)
+    print("Activations saved!")
 
 
+def save_params (output_layer, datafile, num_epochs, batch_size, num_hidden_units, learning_rate,
+    momentum, train_loss, valid_loss, valid_accuracy, output_dim, input_dim):
 
-def save_activations_test2(filename, epoch, output_layer):
+    print("Saving Parameters...")
 
-    print ("Saving Activations...")
+    subfolder = "parameters"
 
-    th_layers = lasagne.layers.get_all_layers(output_layer)
+    data_directory = check_create_directory(subfolder)
 
-    for i, layer in enumerate(th_layers):
+    params_to_save = dict(
+        NETWORK_LAYERS = [str(type(layer)) for layer in lasagne.layers.get_all_layers(output_layer)],
+        DATA_FILENAME = datafile,
+        NUM_EPOCHS = num_epochs,
+        BATCH_SIZE = batch_size,
+        NUM_HIDDEN_UNITS = num_hidden_units,
+        LEARNING_RATE = learning_rate,
+        MOMENTUM = momentum,
+        TRAIN_LOSS = train_loss,
+        VALID_LOSS = valid_loss,
+        VALID_ACCURACY = valid_accuracy,
+        OUTPUT_DIM = output_dim,
+        INPUT_DIM = input_dim
+        )
 
-        output_act = lasagne.layers.get_output(layer).eval()
-        print(output_act)
+    # open('file.json', 'w') as f: f.write(json.dumps(members))
+
+    # log = json.dumps(params_to_save)
+    filename = "params"
+    filename = "{}/{}".format(data_directory, filename)
+
+    with open(filename,"w") as outfile:
+        outfile.write(json.dumps(params_to_save))
+
+    print("Parameters Saved!")
+
+##### HELPER FUNCTIONS #####
+
+def new_experiment_folder(subfolder):
+
+  # check in subfolder
+  subfolder = "experiment"
+
+  # check if that folder exists, if not create it
+  check_create_directory(subfolder)
+
+  # get next experiment number
+  num = new_dir_index(subfolder)
+
+  # new folder name
+  foldername = "{}/ex-{}".format(subfolder,num)
+
+  # check if that folder exists, if not create it
+  check_create_directory(foldername)
+
+  return foldername
 
 
+def check_create_directory(new_folder):
 
-def save_activations(self):
-    if not self.do_save_activations:
-        return
-    filename = self.experiment_name + "_activations.hdf5"
-    mode = 'w' if self.n_iterations() == 0 else 'a'
-    f = h5py.File(filename, mode=mode)
-    epoch_name = 'epoch{:06d}'.format(self.n_iterations())
-    try:
-        epoch_group = f.create_group(epoch_name)
-    except ValueError:
-        self.logger.exception("Cannot save params!")
-        f.close()
-        return
+    # finds the current path, and creates new data directory
+    path = os.path.dirname(os.path.realpath(__file__))
+    data_directory = path + "/" + new_folder
 
-    layers = get_all_layers(self.layers[-1])
+    if not os.path.exists(data_directory):
+        os.makedirs(data_directory)
 
-    for layer_i, layer in enumerate(layers):
-        # We only care about layers with params
-        if not (layer.get_params() or isinstance(layer, FeaturePoolLayer)):
-            continue
+    return data_directory
 
-        output = lasagne.layers.get_output(layer, self.X_val).eval()
-        n_features = output.shape[-1]
-        seq_length = int(output.shape[0] / self.source.n_seq_per_batch)
+def new_dir_index(sub_folder):
 
-        if isinstance(layer, DenseLayer):
-            shape = (self.source.n_seq_per_batch, seq_length, n_features)
-            output = output.reshape(shape)
-        elif isinstance(layer, Conv1DLayer):
-            output = output.transpose(0, 2, 1)
+  # get list of all directories
+      # finds the current path, and creates new data directory
+  path = os.path.dirname(os.path.realpath(__file__))
+  data_directory = path + "/" + sub_folder
 
-        layer_name = 'L{:02d}_{}'.format(layer_i, layer.__class__.__name__)
-        epoch_group.create_dataset(
-            layer_name, data=output, compression="gzip")
+  all_dirs = [name for name in os.listdir(data_directory) ] # if os.path.isdir(name)
 
-    # save validation data
-    if self.n_iterations() == 0:
-        f.create_dataset(
-            'validation_data', data=self.X_val, compression="gzip")
+  # split each directory "ex-N" to get highest N
+  last_experiment = 0
+  print len(all_dirs)
 
-    f.close()
+  if len(all_dirs) > 0:
 
+    print ">0"
+    for i in range(len(all_dirs)):
+      # assuming folder is 'ex-N'
+      front, dash, end = all_dirs[i].rpartition("-")
+      if len(front) > 0:
+        end = int(end)
+        if end > last_experiment:
+          last_experiment = end
+
+    # return new experiment number
+    return last_experiment + 1
+
+  # otherwise 
+  return 1
