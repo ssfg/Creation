@@ -255,6 +255,10 @@ def main(num_epochs=NUM_EPOCHS):
     iter_funcs = create_iter_functions(dataset, output_layer)
 
     print("Starting training...")
+
+    # creating an experiment folder for file structure
+    experiment_folder = new_experiment_folder("experiments")
+
     now = time.time()
     try:
         for epoch in train(iter_funcs, dataset):
@@ -268,22 +272,24 @@ def main(num_epochs=NUM_EPOCHS):
 
 
             # adding in code to save params
-            save_weight_bias_slow("testing_file", epoch, output_layer, "csv", "NUMPY")
+            save_weight_bias_slow(experiment_folder, "testing", epoch, output_layer, "csv", "NUMPY")
 
-            save_params()
+            if epoch['number'] == 1:
+                save_params(experiment_folder, "testing", output_layer, DATA_FILENAME, NUM_EPOCHS, BATCH_SIZE, NUM_HIDDEN_UNITS, LEARNING_RATE, 
+                    MOMENTUM, epoch['train_loss'], epoch['valid_loss'], (epoch['valid_accuracy'] * 100), dataset['output_dim'], dataset['input_dim'])
 
             # adding inc ode to save activations
 
             # X_val = dataset['X_valid']
             # print (X_val.eval())
 
-            save_activations_test("activations_test", epoch, dataset, output_layer, "csv", "NUMPY")
+            save_activations_test(experiment_folder, "testing", epoch, dataset, output_layer, "csv", "NUMPY")
 
             if epoch['number'] >= num_epochs:
                 # save_params(output_layer, datafile, num_epochs, batch_size, num_hidden_units, learning_rate
     # momentum, train_loss, valid_loss, valid_accuracy, output_dim, input_dim)
-                save_params(output_layer, datafile, num_epochs, batch_size, num_hidden_units, learning_rate, 
-                    momentum, train_loss, valid_loss, valid_accuracy, output_dim, input_dim)
+                save_params("testing", output_layer, DATA_FILENAME, NUM_EPOCHS, BATCH_SIZE, NUM_HIDDEN_UNITS, LEARNING_RATE, 
+                    MOMENTUM, epoch['train_loss'], epoch['valid_loss'], (epoch['valid_accuracy'] * 100), dataset['output_dim'], dataset['input_dim'])
                 break
 
     except KeyboardInterrupt:
@@ -295,13 +301,3 @@ def main(num_epochs=NUM_EPOCHS):
 
 if __name__ == '__main__':
     main()
-
-
-DATA_URL = 'http://deeplearning.net/data/mnist/mnist.pkl.gz'
-DATA_FILENAME = 'mnist.pkl.gz'
-
-NUM_EPOCHS = 500
-BATCH_SIZE = 600
-NUM_HIDDEN_UNITS = 512
-LEARNING_RATE = 0.01
-MOMENTUM = 0.9

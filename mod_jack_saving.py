@@ -16,18 +16,16 @@ from IDAPICourseworkLibrary import *
 import h5py
 import json
 
-def save_all():
-    new_experiment_folder("experiments")
-    save_weight_bias_slow()
-    save_activations_test()
-    save_params()
-
-def save_weight_bias_slow(filename, epoch, output_layer, ending, out_type):
+def save_weight_bias_slow(experiment_folder, filename, epoch, output_layer, ending, out_type):
 
     print("saving weights/biases...")
     
     # check for directory, if not create it
-    data_directory = check_create_directory("data/weights-biases")
+    # data_directory = check_create_directory("data/weights-biases")
+
+    subfolder = experiment_folder + "/weights-biases"
+    data_directory = check_create_directory(subfolder)
+    check_create_directory(data_directory)
 
     # collecting all Tensor Shared Variables [W b W b W b] - weights and biases
     all_params = lasagne.layers.get_all_params(output_layer)
@@ -79,12 +77,16 @@ def save_weight_bias_slow(filename, epoch, output_layer, ending, out_type):
     print("weights/biases saved!") # hurray
 
 
-def save_activations_test(filename, epoch, dataset, output_layer, ending, out_type):
+def save_activations_test(experiment_folder, filename, epoch, dataset, output_layer, ending, out_type):
 
     print ("Saving Activations...")
     
     # check for directory, if not create it
-    data_directory = check_create_directory("data/activations")
+    #data_directory = check_create_directory("data/activations")
+    
+    subfolder = experiment_folder + "/activations"
+    data_directory = check_create_directory(subfolder)
+    check_create_directory(data_directory)
 
     # collects all lasagne layers as Theano Variables
     th_layers = lasagne.layers.get_all_layers(output_layer)
@@ -120,14 +122,16 @@ def save_activations_test(filename, epoch, dataset, output_layer, ending, out_ty
     print("Activations saved!")
 
 
-def save_params (output_layer, datafile, num_epochs, batch_size, num_hidden_units, learning_rate,
+def save_params (experiment_folder, filename, output_layer, datafile, num_epochs, batch_size, num_hidden_units, learning_rate,
     momentum, train_loss, valid_loss, valid_accuracy, output_dim, input_dim):
 
     print("Saving Parameters...")
 
-    subfolder = "parameters"
+    # subfolder = "data/parameters"
 
+    subfolder = experiment_folder + "/params"
     data_directory = check_create_directory(subfolder)
+    check_create_directory(data_directory)
 
     params_to_save = dict(
         NETWORK_LAYERS = [str(type(layer)) for layer in lasagne.layers.get_all_layers(output_layer)],
@@ -151,7 +155,8 @@ def save_params (output_layer, datafile, num_epochs, batch_size, num_hidden_unit
     filename = "{}/{}".format(data_directory, filename)
 
     with open(filename,"w") as outfile:
-        outfile.write(json.dumps(params_to_save))
+        outfile.write(json.dumps(params_to_save,sort_keys=True,
+             indent=4, separators=(',', ': ')))
 
     print("Parameters Saved!")
 
@@ -159,8 +164,10 @@ def save_params (output_layer, datafile, num_epochs, batch_size, num_hidden_unit
 
 def new_experiment_folder(subfolder):
 
-  # check in subfolder
-  subfolder = "experiment"
+  # append date to subfolder
+  date_today = time.strftime('%d-%b-%Y') 
+  time_now = time.strftime('%H-%M-%S')
+  subfolder = subfolder + "/" + date_today
 
   # check if that folder exists, if not create it
   check_create_directory(subfolder)
