@@ -85,6 +85,7 @@ def load_data():
         y_train=T.cast(theano.shared(y_train), 'int32'),
         X_valid=theano.shared(lasagne.utils.floatX(X_valid)),
         y_valid=T.cast(theano.shared(y_valid), 'int32'),
+        y_valid_raw = y_valid,
         X_test=theano.shared(lasagne.utils.floatX(X_test)),
         y_test=T.cast(theano.shared(y_test), 'int32'),
         num_examples_train=X_train.shape[0],
@@ -275,9 +276,6 @@ def main(num_epochs=NUM_EPOCHS):
                 epoch['valid_accuracy'] * 100))
 
 
-            # adding in code to save params
-            save_weight_bias_slow(experiment_folder, "testing", epoch, output_layer, "csv", "NUMPY")
-
             if epoch['number'] == 1:
                 save_params(experiment_folder, "testing", output_layer, DATA_FILENAME, NUM_EPOCHS, BATCH_SIZE, NUM_HIDDEN_UNITS, LEARNING_RATE, 
                     MOMENTUM, epoch['train_loss'], epoch['valid_loss'], (epoch['valid_accuracy'] * 100), dataset['output_dim'], dataset['input_dim'])
@@ -287,7 +285,13 @@ def main(num_epochs=NUM_EPOCHS):
             # X_val = dataset['X_valid']
             # print (X_val.eval())
 
-            save_activations_test(experiment_folder, "testing", epoch, dataset, output_layer, "csv", "NUMPY")
+            if epoch['number'] % 2 == 0:
+            # if epoch['number'] == 1:
+                num_coords = 500
+                plot_activations(experiment_folder, epoch, dataset, output_layer, num_coords)
+            if epoch['number'] % 10 == 0:
+                save_activations_test(experiment_folder, "testing", epoch, dataset, output_layer, "csv", "NUMPY")
+                save_weight_bias_slow(experiment_folder, "testing", epoch, output_layer, "csv", "NUMPY")
 
             if epoch['number'] >= num_epochs:
                 # save_params(output_layer, datafile, num_epochs, batch_size, num_hidden_units, learning_rate

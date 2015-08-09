@@ -16,6 +16,11 @@ from IDAPICourseworkLibrary import *
 import h5py
 import json
 
+# inmport tsne plotting and created bn_saving tools
+from tsne import bh_sne
+# from bn_saving import *
+import matplotlib.pyplot as plt
+
 def save_weight_bias_slow(experiment_folder, filename, epoch, output_layer, ending, out_type):
 
     print("saving weights/biases...")
@@ -160,7 +165,77 @@ def save_params (experiment_folder, filename, output_layer, datafile, num_epochs
 
     print("Parameters Saved!")
 
+
+def plot_activations(experiment_folder, epoch, dataset, output_layer, num):
+    
+    coords_subfolder = experiment_folder + "/sne_coords"
+    coords_data_directory = check_create_directory(coords_subfolder)
+    check_create_directory(coords_data_directory)
+
+    plot_subfolder = experiment_folder + "/sne_plots"
+    plot_data_directory = check_create_directory(plot_subfolder)
+    check_create_directory(coords_data_directory)
+
+    print ("Calculating Activations...")
+    
+    # collects all lasagne layers as Theano Variables
+    th_layers = lasagne.layers.get_all_layers(output_layer)
+
+    X_val = dataset['X_valid']
+    y = dataset['y_valid_raw']
+
+    print "X_val shape: ", X_val.shape
+    print "y_val shape: ", y.shape
+    # print X_val.eval()
+
+    for i, layer in enumerate(th_layers):
+        # only care about layers with params
+        if not (layer.get_params() or isinstance(layer, lasagne.layers.FeaturePoolLayer)):
+            continue
+
+        # gets the activations
+        data = lasagne.layers.get_output(layer, X_val, deterministic=True).eval()
+
+        # converts activations to x,y coords
+        coords, labels = plot_bn_sne(data, y, num)
+
+        # generate appropriate file names
+        coords_filename_unique = "{}/{}-E{}-L{}.csv".format(coords_data_directory, "coords", epoch['number'], i)
+        labels_filename_unique = "{}/{}-E{}-L{}.csv".format(coords_data_directory, "labels", epoch['number'], i)
+        plot_filename_unique = "{}/{}-E{}-L{}".format(plot_data_directory, "sne_plot", epoch['number'], i)
+        
+        # save stuff
+        numpy.savetxt(coords_filename_unique, coords, delimiter=",")
+        numpy.savetxt(labels_filename_unique, labels, delimiter=",")
+
+        # plot and save
+        plt.scatter(coords[:, 0], coords[:, 1], c=labels)
+        plt.savefig(plot_filename_unique, dpi=120)
+        plt.close()
+
+
 ##### HELPER FUNCTIONS #####
+
+def plot_bn_sne(data, labels, size):
+
+  print "data[0]: ", data.shape
+  print "labels[0]: ", labels.shape
+
+  # trim the data & labels down to reasonable size
+  data = data[0:size]
+  labels = labels[0:size]
+
+  # sizes
+  data0 = data.shape[0]
+  data1 = data.shape[1]
+
+  # dimensionality reduction with bn_sne
+  X_2d = bh_sne(data)
+  print "plot shape: ", X_2d.shape
+
+  return X_2d, labels
+  # plot & save
+  plot_save(filename, X_2d, labels, data0, data1)
 
 def new_experiment_folder(subfolder):
 
@@ -224,3 +299,20 @@ def new_dir_index(sub_folder):
 
   # otherwise 
   return 1
+
+def unused_suff():
+
+  # finds the current directory path
+  path = os.path.dirname(os.path.realpath(__file__))
+
+  # gets todays date and time
+  date_today = time.strftime('%d-%b-%Y')
+  time_now = time.strftime('%H-%M-%S')
+
+  # creates a file directory, checks if it exists, if not creates one
+  data_directory = "{}/images/{}".format(path, date_today)
+  if not os.path.exists(data_directory):
+      os.makedirs(data_directory)
+
+  # create the filename
+  filename = 'images/{}/bh_sne-0x{}-1x{}-t{}.png'.format(date_today, Xdim0, Xdim1, time_now)

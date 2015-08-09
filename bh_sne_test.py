@@ -25,6 +25,8 @@ y = np.hstack((train[1], val[1], test[1]))
 
 plot_bn_sne(X,y,800)
 
+print "shape of y: ", y.shape
+
 # print "x-shape before", X.shape
 # X = X[0:500] # trims the 70,000 matrix down to 2000 - far faster!
 # print "x-shape after", X.shape
