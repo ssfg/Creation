@@ -25,6 +25,10 @@ import h5py
 from mod_jack_saving import *
 from IDAPICourseworkLibrary import *
 
+# inmport tsne plotting and created bn_saving tools
+from tsne import bh_sne
+from bn_saving import *
+
 
 PY2 = sys.version_info[0] == 2
 
