@@ -1,4 +1,6 @@
 *.pyc
+*.csv
+*.txt
 logs/*
 data/*
 experiments/*
