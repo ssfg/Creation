@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
+import math
 
 def rotateArray(array, angle):
     rotation = np.array([[np.cos(angle), -1*np.sin(angle)], [np.sin(angle), np.cos(angle)]])
@@ -16,6 +17,16 @@ def getRandomTriangle(nSamples):
     tri = np.random.rand(nSamples,2)
     tri = tri[tri[:,0] + tri[:,1] <= 1, :]
     return tri
+
+def getUniformSquare(nSamples):
+    coordinates = []
+    size = int(math.sqrt(nSamples))
+    for x in range(size):
+      for y in range(size):
+        coordinates.append([x, y])
+    sqr = np.asarray(coordinates)
+    return sqr
+
 def getRandomTriangle3D(nSamples):
     tri = np.random.rand(nSamples,3)
     tri = tri[tri[:,0] + tri[:,1] +tri[:,2] <= 1, :]
@@ -39,17 +50,23 @@ def reflectXY(array):
     reflect[:,0] = -1*array[:,0]
     return reflect
 
-if __name__ == '__main__':
-    # Simulate 3 groups of random data.
+def main_original():
+    # Generate Random Triangle
     tri = getRandomTriangle(100)
+    
+    # Generate Random Traingle, rotate and offset
     tri2 = getRandomTriangle(100) 
     tri2 = rotateArray(tri2, np.pi/4)
     tri2[:,0] = tri2[:,0] + 10
     tri2[:,1] = tri2[:,1] + 5
+
+    # Generate Random Triange, Rotate and offset (diff amounts)
     tri3 = getRandomTriangle(100) 
     tri3 = rotateArray(tri3, 5*np.pi/3)
     tri3[:,0] = tri3[:,0] + 10
     tri3[:,1] = tri3[:,1]
+
+    # add both to the np array
     tri = np.append(tri, tri2, axis=0)
     tri = np.append(tri, tri3, axis=0)
 
@@ -57,10 +74,12 @@ if __name__ == '__main__':
     triR1 = rotateArray(tri, 11*np.pi/6)
     triR2 = rotateArray(tri, np.pi/4)
 
-    plt.scatter(tri, c='b')
+    # plot original 3
+    plt.scatter(tri[:,0], tri[:,1], c='b')
+    plt.savefig('rotatedDataOriginal.png')
     plt.show()
 
-    # Plot the three scatter-plots
+    # Plot the three sets of triangles
     plt.scatter(tri[:,0], tri[:,1], color = 'b')
     plt.scatter(triR1[:,0], triR1[:,1], color = 'r')
     plt.scatter(triR2[:,0], triR2[:,1], color = 'g')
@@ -73,6 +92,7 @@ if __name__ == '__main__':
     triCastR1 = castPCA(triR1)
     triCastR2 = castPCA(triR2)
     
+
     plt.scatter(triCast[:,0], triCast[:,1], color = 'b')
     plt.scatter(triCastR1[:,0], triCastR1[:,1], color = 'r')
     plt.scatter(triCastR2[:,0], triCastR2[:,1], color = 'g')  
@@ -85,7 +105,7 @@ if __name__ == '__main__':
     plt.show() 
     plt.close()
     
-    # Create the possible reflections for each rotation.
+    # Create the possible reflections for each rotation (X, XY, Y)
     triCastR1RefX = reflectX(triCastR1)
     triCastR1RefY = reflectY(triCastR1)
     triCastR1RefXY = reflectXY(triCastR1)
@@ -118,3 +138,16 @@ if __name__ == '__main__':
     
     plt.close()
 
+
+if __name__ == '__main__':
+    
+    # Generate Random Triangle
+    tri = getRandomTriangle(100)
+
+    # Generate Random Square
+    sqr = getUniformSquare(100)
+
+    plt.scatter(sqr[:,0], sqr[:,1], c='b')
+    plt.scatter(tri[:,0], tri[:,1], c='y')
+    # plt.savefig('rotatedDataOriginal.png')
+    plt.show()

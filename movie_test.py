@@ -8,7 +8,6 @@ def makeVideo(X_2d,labels):
     gif_duration = X_2d.shape[0]
     gif_fps = 10
 
-  
     timed_activations = dataset['timed_activations']
     duration = X_2d.shape[0]
 
